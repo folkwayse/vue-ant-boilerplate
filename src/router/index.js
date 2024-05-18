@@ -1,25 +1,24 @@
 import { createRouter, createWebHistory } from "vue-router";
 import Layout from "@/layouts/AppLayouts.vue";
-import Genrelist from "@/pages/genre/list.vue";
+import genreRoutes from "./genreRoutes";
+import mangaRoutes from "./mangaRoutes";
 
 const routes = [
   {
     path: "/",
-
     component: Layout,
     children: [
       {
         path: "",
-        component: Genrelist,
+        component: () => import("@/pages/genre/list.vue"),
       },
       {
         path: "genres",
-        children: [
-          {
-            path: "",
-            component: Genrelist,
-          },
-        ],
+        children: genreRoutes,
+      },
+      {
+        path: "mangas",
+        children: mangaRoutes,
       },
     ],
   },

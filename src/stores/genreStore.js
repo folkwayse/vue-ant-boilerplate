@@ -1,22 +1,49 @@
-import { defineStore } from 'pinia';
+import { defineStore } from "pinia";
 
-export const useGenreStore = defineStore('genre', {
+export const useGenreStore = defineStore("genre", {
   state: () => ({
-    genres: []
+    genres: [],
+    headers : [
+      { title: 'Name', dataIndex: 'name' },
+      { title: 'slug', dataIndex: 'slug' },
+      { title: 'action', dataIndex: 'action' },
+    ]
   }),
   actions: {
-    setGenres(newGenres) {
-      this.genres = newGenres;
+    async fetchGenres() {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}genres`);
+      const data = await response.json();
+      this.genres = data;
+      
     },
-    addGenre(genre) {
-      this.genres.push(genre);
+    async getGenreById(id) {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}genres/${id}`);
+      const data = await response.json();
+      return data;
     },
-    removeGenre(genre) {
-      this.genres = this.genres.filter(g => g !== genre);
-    }
+    async updateGenre(id, data) {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}genres/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      return result;
+    },
+    async createNewGenre(data) {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}genres`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      return result;
+    },
+
   },
-  getters: {
-    genreCount: (state) => state.genres.length,
-    getGenres: (state) => state.genres,
-  }
+  getters: {},
 });

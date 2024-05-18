@@ -5,6 +5,7 @@ import { createPinia } from 'pinia';
 import Antd from 'ant-design-vue';
 
 import 'ant-design-vue/dist/reset.css';
+// import ant design icon 
 // main.ts
 import 'virtual:uno.css'
 const app = createApp(App);

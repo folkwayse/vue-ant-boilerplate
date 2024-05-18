@@ -1,16 +1,21 @@
 <template>
   <a-row>
-    <h3 class="mx-3">Genres</h3>
+    <h3 class="mx-3">Manga</h3>
 
-    <a-button :href="`/genres/add`"> Add New Genre </a-button>
+    <a-button :href="`/mangas/add`"> Add New Manga </a-button>
   </a-row>
+
   <a-table
-    :dataSource="genreStore.genres"
-    :pagination="false"
-    :columns="genreStore.headers"
+    :dataSource="mangaStore.mangas"
+    
+    :columns="mangaStore.headers"
   >
+
     <template #bodyCell="{ column, record }">
       <template v-if="column.dataIndex === 'action'">
+        <a-button class="btn-action" danger @click="add(record)"
+          >Add new Chapters</a-button
+        >
         <a-button class="btn-action" danger @click="edit(record)"
           >Edit</a-button
         >
@@ -27,15 +32,12 @@
 <script setup>
 import { onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { useGenreStore } from "@/stores/genreStore";
+import { useMangaStore } from "@/stores/mangaStore";
 const router = useRouter();
-const genreStore = useGenreStore();
+const mangaStore = useMangaStore();
 onMounted(() => {
-  genreStore.fetchGenres();
+  mangaStore.fetchManga();
 });
 
-const edit = (genre) => {
-  console.log(genre);
-  router.push("/genres/edit/" + genre.id);
-};
+
 </script>
