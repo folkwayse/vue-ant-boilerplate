@@ -13,7 +13,8 @@
 
     <template #bodyCell="{ column, record }">
       <template v-if="column.dataIndex === 'action'">
-        <a-button class="btn-action" danger @click="add(record)"
+        <a-button class="btn-action" 
+        :href="`/mangas/addchapter/${record.id}`"
           >Add new Chapters</a-button
         >
         <a-button class="btn-action" danger @click="edit(record)"
