@@ -238,7 +238,7 @@ const getImageFromUrl = async () => {
 const onFinish = async (values) => {
   try {
     await mangaStore.createNewManga(values);
-    // router.push({ path: "/mangas" });
+    router.push({ path: "/mangas" });
   } catch (error) {
     console.log(error);
   }

@@ -1,19 +1,40 @@
 <template>
   <a-panel>
-    <h3>{{ mangaStore.manga.title }}</h3>
+    <h3>
+      {{ mangaStore.manga.title }} - [ {{ mangaStore.manga.last_chapters }}]
+    </h3>
   </a-panel>
+  <a-panel>
+    <span> get chapter Data</span>
+    <a-input v-model:value="idKiryuuManga"></a-input>
+    <a-button @click="getChaptersFromKiryuu">process</a-button>
+  </a-panel>
+  <a-list style="max-height: 300px; overflow: auto">
+    <a-list-item
+      @click="getDataFromKiryu(chapter.slug)"
+      v-for="chapter in kiryuuChapters"
+      :key="chapter.id"
+    >
+      <a>{{ chapter.chapter }}</a>
+    </a-list-item>
+  </a-list>
   <a-divider />
   <a-panel>
     <a-popover v-model:open="visibleIdKiryu" title="Title" trigger="click">
-      <template #content>
-        <a-input v-model:value="idkiryu"></a-input>
-        <a-button @click="getDataFromKiryu">process</a-button>
-      </template>
+      <template #content> </template>
       <a-button type="primary">Get Data From Kiryuu</a-button>
     </a-popover>
+
+    <a-input v-model:value="idkiryu"></a-input>
+    <a-button @click="getDataFromKiryu">process</a-button>
   </a-panel>
   <a-divider />
-  <a-form :model="formState" @finish="onFinish" @finishFailed="onFinishFailed">
+  <a-form
+    ref="formRef"
+    :model="formState"
+    @finish="onFinish"
+    @finishFailed="onFinishFailed"
+  >
     <a-form-item
       label="Chapter Name"
       name="name"
@@ -32,6 +53,10 @@
       <a-input-number v-model:value="formState.chapter_number" />
     </a-form-item>
 
+    <a-form-item :wrapper-col="{ offset: 8, span: 16 }">
+      <a-button type="primary" html-type="submit">Submit</a-button>
+    </a-form-item>
+
     <a-form-item label="Add Image URL">
       <div style="display: flex; gap: 10px">
         <a-input v-model:value="newImageUrl" placeholder="Enter image URL" />
@@ -39,26 +64,24 @@
       </div>
     </a-form-item>
 
-    <a-form-item 
-    label="Content" 
-    name="content"
-    v-if="formState.content.length > 0">
+    <a-form-item
+      label="Content"
+      name="content"
+      v-if="formState.content.length > 0"
+    >
       <ul>
         [Preview]
         <a-tag @click="Reupload">[Reupload]</a-tag>
+        <a-tag>[{{ statusReupload }}]</a-tag>
         <li v-for="(url, index) in formState.content" :key="index">
           <a-image
             :src="url"
             alt="Image"
-            style="max-width:600px; margin-right: 10px"
+            style="max-width: 600px; margin-right: 10px"
           />
           <a-button @click="removeImageUrl(index)">Remove</a-button>
         </li>
       </ul>
-    </a-form-item>
-
-    <a-form-item :wrapper-col="{ offset: 8, span: 16 }">
-      <a-button type="primary" html-type="submit">Submit</a-button>
     </a-form-item>
   </a-form>
 </template>
@@ -66,13 +89,18 @@
 import { onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useMangaStore } from "@/stores/mangaStore";
+import { notification } from "ant-design-vue";
 const visibleIdKiryu = ref(false);
 const idkiryu = ref("hackgu-chapter-01");
+const idKiryuuManga = ref("hackgu");
 const router = useRouter();
 const mangaStore = useMangaStore();
-
-onMounted(() => {
-  mangaStore.getMangaById(router.currentRoute.value.params.id);
+const kiryuuChapters = ref([]);
+const statusReupload = ref("belum upload");
+const formRef = ref(null);
+onMounted(async () => {
+  await mangaStore.getMangaById(router.currentRoute.value.params.id);
+  idKiryuuManga.value = mangaStore.manga.slug;
 });
 const formState = reactive({
   name: "",
@@ -82,6 +110,27 @@ const formState = reactive({
 
 const newImageUrl = ref("");
 
+const getChaptersFromKiryuu = async () => {
+  const id = idKiryuuManga.value;
+
+  const options = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id: id,
+    }),
+  };
+
+  const response = await fetch(
+    import.meta.env.VITE_API_URL + "kiryu/getmangadetailbyid",
+    options
+  );
+  const jsonData = await response.json();
+  const dataManga = jsonData.data;
+  kiryuuChapters.value = dataManga.chapters;
+};
 const getImageFromUrl = async (url) => {
   const options = {
     method: "POST",
@@ -102,6 +151,7 @@ const getImageFromUrl = async (url) => {
 };
 
 const Reupload = async () => {
+  statusReupload.value = "PROCESING ....";
   const images = formState.content;
   formState.content = [];
 
@@ -110,6 +160,11 @@ const Reupload = async () => {
     const newImageUrl = await getImageFromUrl(images[i]);
     formState.content.push(newImageUrl);
   }
+  notification.open({
+    message: "Reup Done",
+    description: "",
+  });
+  statusReupload.value = "reup done";
 };
 const addImageUrl = () => {
   if (newImageUrl.value) {
@@ -127,11 +182,13 @@ const onFinish = async (values) => {
   } catch (error) {
     console.log(error);
   }
+  formState.content = [];
 };
-const getDataFromKiryu = async () => {
-  const id = idkiryu.value;
+const getDataFromKiryu = async (chapter) => {
+  const id = chapter;
   console.log(id);
-
+  const indexNow = kiryuuChapters.value.findIndex((item) => item.slug == id);
+  const nextData = kiryuuChapters.value[indexNow - 1];
   const options = {
     method: "POST",
     headers: {
@@ -150,8 +207,30 @@ const getDataFromKiryu = async () => {
   console.log(jsonData.data);
   const dataManga = jsonData.data;
   formState.name = dataManga.title;
-  formState.chapter_number = dataManga.chapter_number;
   formState.content = dataManga.content;
+  try {
+    let number = dataManga.title?.replace("Bahasa Indonesia", "");
+    number = number.split(" ");
+    number = number[number.length - 2];
+    formState.chapter_number = parseFloat(number);
+  } catch (error) {
+    return;
+  }
+
+
+ 
+  statusReupload.value = "belum upload";
+
+  await Reupload();
+  formRef.value
+    .validate()
+    .then(() => {
+      onFinish(formState);
+    })
+    .catch((errorInfo) => {
+      onFinishFailed(errorInfo);
+    });
+  await getDataFromKiryu(nextData.slug);
 };
 
 const onFinishFailed = (errorInfo) => {
